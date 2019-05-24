@@ -1,8 +1,8 @@
 var express = require("express")
-var express_handlebars = require("express-handlebars")
 var mongoose = require("mongoose")
 var cheerio = require("cheerio")
 var axios = require("axios")
+var logger = require("morgan");
 
 
 
@@ -14,7 +14,7 @@ var PORT = 3000;
 
 var app = express();
 
-// app.use(logger("dev"));
+app.use(logger("dev"));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -29,18 +29,20 @@ mongoose.connect(MONGODB_URI);
 
 app.get("/scrape", function (req, res) {
 
-    axios.get("http://time.com/").then(function (response) {
-
-    var result = {};
+    axios.get("http://time.com/section/world/").then(function (response) {
+      var $ = cheerio.load(response.data);
+      $("article.partial.tile.media").each(function(i, element) {
+        // Save an empty result object
+        var result = {};
         // Then, we load that into cheerio and save it to $ for a shorthand selector
-        var $ = cheerio.load(response.data);
+
+
 
         // Now, we grab every h2 within an article tag, and do the following:
-        result.title = $(this).children("h3.headline").text();
-        result.summary = $(this).children("div.article-info-extened").children("div.summary").text()
-        result.link = $(this).children("h3.headline").attr("href");
+        result.title = $(this).children("div.media-body").children("h3.headline").text();
+        result.summary = $(this).children("div.media-body").children("div.article-info-extended").children("div.summary").text();
+        result.link = "http://www.time.com/" + $(this).children("div.media-body").children("h3.headline").find("a").attr("href");
 
-        console.log(this.children);
         console.log(result)
 
         db.Article.create(result)
@@ -52,6 +54,7 @@ app.get("/scrape", function (req, res) {
             });
     });
     res.send("Scrape Complete");
+});
 });
 
 app.get("/articles/saved", function(req, res) {
