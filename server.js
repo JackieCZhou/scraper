@@ -3,6 +3,7 @@ var mongoose = require("mongoose")
 var cheerio = require("cheerio")
 var axios = require("axios")
 var logger = require("morgan");
+var path = require("path");
 
 
 
@@ -68,6 +69,9 @@ app.get("/articles/saved", function(req, res) {
         console.log
       })
   });
+  app.get("/saved", function(req, res){
+    res.sendFile(path.join(__dirname, "./public/saved.html"));
+  })
   
   app.get("/articles/:id", function(req, res) {
     db.Article.findOne({ _id: req.params.id })
@@ -79,6 +83,17 @@ app.get("/articles/saved", function(req, res) {
         res.json(err);
       });
   });
+
+  app.put("/articles/saved/:id", function(req, res){
+    console.log(req.params.id);
+    db.Article.findOneAndUpdate({_id: req.params.id}, {saved: true})
+    .then(function(dbArticle){
+      res.json(dbArticle);
+      console.log(dbArticle)
+    })
+
+
+  })
   
   app.post("/articles/:id", function(req, res) {
     db.Note.create(req.body)
@@ -93,11 +108,17 @@ app.get("/articles/saved", function(req, res) {
       });
   });
 
+  app.get("/articles", function(req, res){
+    db.Article.find({})
+    .then(function(dbArticle){
+      res.json(dbArticle);
+      
+    })
+    .catch(function(err){
+    console.log(err)})
+  })
 
-
-
-
-
+  
 
 
 app.listen(PORT, function() {
